@@ -1,0 +1,42 @@
+#$Test = import-csv .\Test.csv
+$CSV = @(); $CSV += 'DateTime,Event'; get-content input.txt | foreach { $CSV += $_.Replace('[','').Replace('] ',',')  }
+$CSV = $CSV | convertFrom-csv | sort-object -property DateTime
+
+$global:Guard = $NULL
+$Test = $CSV | foreach {
+  $_ | select-object -Property DateTime,@{name='Guard';Expression={$StringCheck= ($_.event | Select-String -Pattern '#\S+').Matches.Value; if ($StringCheck -ne $NULL){$global:Guard = $StringCheck}; $Global:Guard}},Event
+}
+
+$Shifts = $Test | select-object -Property @{Name='Date';Expression={$Date = get-date $_.DateTime; if ($Date.Hour -eq 23) { $Date.AddDays(1).GetDateTimeFormats()[8] } else {$Date.GetDateTimeFormats()[8]} }},* | Group-Object -Property Date,Guard
+
+$Result = foreach ($Shift in ($Shifts.group | Select-object -property Date,Guard -unique)) {$Shift | select-object -Property Date,Guard,@{ Name='SleepEvents';Expression={
+   $SleepEvents=@()
+   ($SleepEvent = new-object pSObject ) | add-member -Name StartSleep -MemberType NoteProperty -Value $NULL -PassThru| add-member -Name EndSleep -MemberType NoteProperty -Value $Null
+   $Test | where {$_.Guard -eq $Shift.Guard -and $_.DateTime -like ("*" + $Shift.Date + "*") -and ($_.Event -eq 'Wakes Up' -or $_.Event -eq 'falls asleep')} | foreach {
+     if ($_.Event -eq 'Falls Asleep')
+       {
+         $SleepEvent.StartSleep = $_.DateTime
+       } else {
+         $SleepEvent.EndSleep = $_.DateTime
+       }
+     if ($SleepEvent.EndSleep -ne $NULL)
+      {
+        $SleepEvents += $SleepEvent | select-object -property *,@{Name='TotalMinutes';expression={(get-date $_.EndSleep) - (get-date $_.StartSleep)}},@{Name='ActualMinutesAsleep';expression={(get-date $_.StartSleep).minute..((get-date $_.EndSleep).minute-1)}}
+        ($SleepEvent = new-object pSObject ) | add-member -Name StartSleep -MemberType NoteProperty -Value $NULL -PassThru| add-member -Name EndSleep -MemberType NoteProperty -Value $Null
+      }
+   }
+   $SleepEvents
+   }
+ }
+}
+
+$Result = $Result | Select-Object -Property *,@{Name='TotalMinutesPerShift';Expression={$TimeSpan = New-TimeSpan; $_.Sleepevents | foreach { $TimeSpan +=  $_.TotalMinutes}; $TimeSpan.TotalMinutes }},@{Name='ActualMinutesAsleepPerShift';Expression={$_.SleepEvents.ActualMinutesAsleep }}
+$MostSleepyGuard = ($Result | Select-Object -Property Guard -Unique | select-object -Property *,@{Name='TotalMinutesAsleepOverall';Express={$ToCheck = $_.Guard; ($Result | where {$_.Guard -eq $ToCheck} | measure-object -Property TotalMinutesPerShift -sum).Sum}} | sort-object -Property TotalMinutesAsleepOverall | select-object -last 1).Guard
+
+#Solution to Part 1
+[int]($MostSleepyGuard).Replace('#','') * (($Result | where {$_.Guard -eq $MostSleepyGuard}).ActualMinutesAsleepPerShift | Group-Object | sort-object -Property Count | select-object -last 1).Name
+
+#Solution to Part 2
+$DozingGuard = ($Result | select-object -Property Guard,ActualMinutesAsleepPerShift | Group-Object -Property Guard | sort-object -Property Count | select-object -Last 1).Name
+$MostOftenMinute = (($Result | where {$_.Guard -eq $DozingGuard}).ActualMinutesAsleepPerShift | Group-Object | Sort-Object -Property Count | Select-Object -Last 1).Name
+[int]($DozingGuard).Replace('#','') * $MostOftenMinute

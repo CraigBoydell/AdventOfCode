@@ -1,0 +1,5 @@
+$Source = get-content Input.txt
+$Results = $Source | select-object -property @{Name='BoxID';Expression={$_}}, @{Name='Compare';Expression={ $ToCheck = $_; $Source | foreach { if ( @(Compare-Object $ToCheck.ToCharArray() $_.ToCharArray()).Count -eq 2) {$Tocheck + ','+ $_ + ',' + $TRUE} }}}
+#Further reduce as Compare Object returned some False Positives
+$TwoBoxes = foreach ( $Result in $($Results | where {$_.Compare -like "*$TRUE"} | sort-object -Property BoxID)  ) { if ( @( 0..($Result.BoxId.Length - 1) | foreach {compare-object (($Result.Compare -split ',')[0]).ToCharArray()[$_] (($Result.Compare -split ',')[1]).ToCharArray()[$_]}).count -eq 2) {$Result} }
+(Compare-Object $TwoBoxes[0].BoxID.ToString().ToCharArray() $TwoBoxes[1].BoxID.ToString().ToCharArray() -ExcludeDifferent -IncludeEqual | select-object -ExpandProperty InputObject) -join ''
