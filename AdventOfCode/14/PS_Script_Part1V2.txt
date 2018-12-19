@@ -1,0 +1,60 @@
+function Test-Recipes {
+
+  Param (
+    $RecipesToTest
+  )
+
+$Start = get-date
+$Scores = @()
+$Scores += 3
+$Scores += 7
+
+
+$Indexes = @()
+$Indexes += 1 | select-object @{Name='Elf';Expression={'A'}},@{Name='Index';Expression={0}},@{Name='Number';Expression={3}}
+$Indexes += 1 | select-object @{Name='Elf';Expression={'B'}},@{Name='Index';Expression={1}},@{Name='Number';Expression={7}}
+
+$RecipeNumber = $RecipesToTest
+
+$i = 0
+Do {
+  $Now = get-date
+#  $NewScore = ($Indexes | where {$_.Elf -eq 'A'}).Number + ($Indexes | where {$_.Elf -eq 'B'}).Number
+  $NewScore = ($Indexes | Measure-Object -Sum -Property Number).Sum
+#  $newScore.ToString().ToCharArray() | foreach { $Scores += $_ | select-object @{Name='Number';Expression={[int]([string]$_)}}  }
+
+  if ( $NewScore -gt 9 ) {
+    $Scores += ($newScore.ToString().ToCharArray() | select-object @{Name='Number';Expression={[int32]$([string]$_)}}).Number
+  } else {
+    $Scores += $newScore
+  }
+
+#  $ToMove = $Indexes | sort-object -property Elf
+#  $ToMove | foreach {
+  $Indexes | foreach {
+    $Elf = $_.Elf
+    $NumberToMove = $_.Number + 1
+    if ($NumberToMove % $Scores.count -eq 0 ) {
+    } else {
+      #$Index = $(($Indexes | where {$_.Elf -eq $Elf}).Index + ($NumberToMove % $Scores.count))
+      $Index = $_.Index + ($NumberToMove % $Scores.count)
+      if ($Index -ge $Scores.count) { $Index = $Index - $Scores.count}
+#     ($Indexes | where {$_.Elf -eq $Elf}).Index = $Index
+#     ($Indexes | where {$_.Elf -eq $Elf}).Number = $Scores[$Index].number
+      $_.Index = $Index
+      $_.Number = $Scores[$Index]
+
+    }
+  }
+  if ($i % 1000 -eq 0 ) { $i } 
+  $i++
+} until ( $Scores.Count -gt ($RecipeNumber + 10))
+
+#$AllScores = $Scores.Number -join ''
+$AllScores = $Scores -join ''
+$AllScores.substring($RecipeNumber,10)
+
+$Finish = get-date
+
+$Finish - $Start
+}
