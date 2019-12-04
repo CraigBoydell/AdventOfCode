@@ -1,3 +1,0 @@
-$TruthTable = get-content input.txt | select-object -Property @{Name='String';Expression={$_}},@{Name='StringGroup';Expression={$_.ToCharArray() | Group-Object}} | select-object -Property *,@{Name='Has3';Expression={ if ( $_.StringGroup | where {$_.Count -eq 3}) {$True} else {$FALSE}}},@{Name='Has2';Expression={if ($_.StringGroup | where {$_.Count -eq 2}) {$TRUE} else {$false}}}
-
-($TruthTable | where {$_.Has2}).Count * ($TruthTable | where {$_.Has3}).Count
