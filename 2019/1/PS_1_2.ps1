@@ -7,4 +7,4 @@ Function CalcFuel {
 
 }
 
-$intArray | select-object -First 1 | foreach { $Result = CalcFuel -intFuel $_; $Result; do { $Result = CalcFuel -intFuel $Result; $Result} until ($Result -eq 0) }
+$intArray | select-object -First 1 | ForEach-Object { $Result = CalcFuel -intFuel $_; $Result; do { $Result = CalcFuel -intFuel $Result; $Result} until ($Result -eq 0) }

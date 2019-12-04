@@ -101,4 +101,4 @@ $IntArray1 = @(
 75955
 )
 
-($IntArray1 | foreach { [math]::floor($_ / 3) -2  } |Measure-Object -Sum).Sum
+($IntArray1 | ForEach-Object { [math]::floor($_ / 3) -2  } |Measure-Object -Sum).Sum

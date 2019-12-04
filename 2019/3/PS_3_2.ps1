@@ -64,4 +64,4 @@ $Line2 | ForEach-Object {
 
 ($Global:Intersects.keys | ForEach-Object { $CoOrds = $_.Split(','); Test-CoOrds -Point2 @{x=$CoOrds[0]; y=$CoOrds[1]}  } | Measure-Object -Minimum).minimum
 
-($Global:Intersects.values | ForEach-Object {(($_ | select-string -Pattern '([\d]+)' -AllMatches).matches.groups | where {$_.name -eq 1} | Measure-Object -Property Value -Sum).Sum} | Measure-Object -Minimum).Minimum
+($Global:Intersects.values | ForEach-Object {(($_ | select-string -Pattern '([\d]+)' -AllMatches).matches.groups | Where-Object {$_.name -eq 1} | Measure-Object -Property Value -Sum).Sum} | Measure-Object -Minimum).Minimum
