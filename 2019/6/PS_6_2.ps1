@@ -11,7 +11,7 @@ $Test = @(
 "J)K"
 "K)L"
 )
-
+#Puzzle input
 $Test = @'
 S5F)4L5
 7BP)2V1
@@ -911,9 +911,27 @@ XYX)6ZQ
 '@
 $Test = $Test.split("`n")
 
+#Puzzle example
+$Test = @'
+COM)B
+B)C
+C)D
+D)E
+E)F
+B)G
+G)H
+D)I
+E)J
+J)K
+K)L
+K)YOU
+I)SAN
+'@
+$Test = $Test.split("`n")
+
 $PathLengths = @{}
+$OrbitPaths = @()
 $Array = ($Test |Select-String -Pattern '(.*)\)(.*)' -AllMatches).matches | Select-Object @{N='1';E={($_.groups)[1].value}},@{N='2';E={($_.groups)[2].value}}
-#$Bodies = $Array | ForEach-Object { $_ |select-object -expandProperty 1; $_ | select-object -expandProperty 2  } | Select-Object -Unique
 $Bodies = 'SAN','YOU'
 $i = 0 #Start Number
 $Bodies[$i..$($Bodies.count-1)] | ForEach-Object {
@@ -934,46 +952,10 @@ $Bodies[$i..$($Bodies.count-1)] | ForEach-Object {
         $PathLengths.Add($_,$($OrbitPath.Count - 1))
     }
     $i++
-    $OrbitPath.values -join '-'
+    $OrbitPaths += $OrbitPath.values -join '-'
 }
-$Measure = $PathLengths.values | where {$_ -gt 0} |  Measure-Object -Sum
-$Measure.sum# - $Measure.Count
 
-
-##Alternative.... So much quicker!
-
-$PathLengths = @{}
-$Array = ($Test |Select-String -Pattern '(.*)\)(.*)' -AllMatches).matches | Select-Object @{N='1';E={($_.groups)[1].value}},@{N='2';E={($_.groups)[2].value}}
-$Bodies = $Array | ForEach-Object { $_ |select-object -expandProperty 1; $_ | select-object -expandProperty 2  } | Select-Object -Unique
-$i = 0 #Start Number
-$Bodies[$i..$($Bodies.count-1)] | ForEach-Object {
-    $OrbitPath = @{}
-    write-progress -Activity $([string]$i + " / " + $Bodies.count )
-    $ToCheck = $_
-    $y = 0
-    $OrbitPath.Add($y, $_)
-    $InPathLengths = $false
-    do {
-        $y++
-        $TestLoop = $Array | Where-Object {$_.'2' -eq $ToCheck} | select-object -first 1
-        $OrbitPath.Add($y, $TestLoop.'1')
-        $ToCheck = $TestLoop.'1'
-        $InPathLengths = $PathLengths.ContainsKey($ToCheck) 
-    } until ( $ToCheck -eq 'COM' -or [string]::IsNullOrEmpty($ToCheck) -or $InPathLengths )
-    if ($InPathLengths) {
-        $PathLengths.Add($_,$($OrbitPath.Count-1 + $($PathLengths.$ToCheck) ))
-    } else {
-      if ($_ -eq 'COM') {
-        $PathLengths.Add($_,0)
-      } else {
-        $PathLengths.Add($_,$($OrbitPath.Count - 1))
-      }   
-      #$PathLengths.Add($_,$($OrbitPath.Count - 1))
-    }
-    #$_
-    #$PathLenghts + ':' + $InPathLengths
-   
-    $i++
-}
-$Measure = $PathLengths.values | Measure-Object -Sum
-$Measure.sum #- $Measure.Count
+$SAN = $Orbitpaths[0].split('-')
+$YOU = $OrbitPaths[1].Split('-')
+$i=0; do {$Matched = $($SAN[$i] -eq $YOU[$i]); $i++} until ($Matched -eq $false)
+($YOU.count - $i) + ($SAN.count - $i)
