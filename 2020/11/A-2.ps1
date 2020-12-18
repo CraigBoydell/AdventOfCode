@@ -11,7 +11,7 @@ L.LLLLLL.L
 L.LLLLL.LL
 '@
 $SeatMap = $SeatMap -split "`r?`n"
-#$SeatMap = get-content '.\I.txt'
+$SeatMap = get-content '.\I.txt'
 $NewSeatMap = $Null
 $Iteration = 1
 
@@ -20,57 +20,64 @@ Function Test-OccupiedSeatDirection {
     $Direction,
     $CurrentRow,
     $CurrentSeat,
-    $SeatMapArray
+    $SeatMapArray,
+    $Verbose
   )
   switch ($Direction){
     "Up" {
       if ($CurrentRow -ne 0) {
-        do { $i++ } until (($CurrentRow- $i) -lt 0 -or $($SeatMapArray[$CurrentRow- $i][$CurrentSeat]) -ne '.')
+        do { $i++ } until (($CurrentRow- $i) -le 0 -or $($SeatMapArray[$CurrentRow- $i][$CurrentSeat]) -ne '.')
         if ($($SeatMapArray[$CurrentRow- $i][$CurrentSeat]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
     "Down" {
       if ($CurrentRow -ne ($SeatMapArray.count-1)) {
         do { $i++ } until (($CurrentRow+ $i) -ge ($SeatMapArray.count-1) -or $($SeatMapArray[$CurrentRow+ $i][$CurrentSeat]) -ne '.')
         if ($($SeatMapArray[$CurrentRow+ $i][$CurrentSeat]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
     "Left" {
       if ($CurrentSeat -ne 0) {
         do { $i++ } until (($CurrentSeat- $i) -le 0 -or $($SeatMapArray[$CurrentRow][$CurrentSeat-$i]) -ne '.')
         if ($($SeatMapArray[$CurrentRow][$CurrentSeat-$i]) -eq '#') {$True} else {$false}
-        #write-host $i
+        if ($Verbose -eq $true) {$i}
       } else {$false}      
     }
     "Right" {
       if ($CurrentSeat -ne ($SeatMapArray[$CurrentRow].count-1)) {
         do { $i++ } until (($CurrentSeat+ $i) -ge ($SeatMapArray[$CurrentRow].count-1) -or $($SeatMapArray[$CurrentRow][$CurrentSeat+$i]) -ne '.')
         if ($($SeatMapArray[$CurrentRow][$CurrentSeat+$i]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
     "TopLeft" {
       if ($CurrentRow -ne 0 -and $CurrentSeat -ne 0) {
         do { $i++ } until (($CurrentRow- $i) -le 0 -or ($CurrentSeat- $i) -le 0 -or $($SeatMapArray[$CurrentRow-$i][$CurrentSeat-$i]) -ne '.')
         if ($($SeatMapArray[$CurrentRow-$i][$CurrentSeat-$i]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
     "TopRight" {
       if ($CurrentRow -ne 0 -and $CurrentSeat -ne ($SeatMapArray[$CurrentRow].count -1)) {
         do { $i++ } until (($CurrentRow- $i) -le 0 -or ($CurrentSeat+ $i) -ge ($SeatMapArray[$CurrentRow].count-1) -or $($SeatMapArray[$CurrentRow-$i][$CurrentSeat+$i]) -ne '.')
-        #write-host $i
         if ($($SeatMapArray[$CurrentRow-$i][$CurrentSeat+$i]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
     "BottomLeft" {
       if ($CurrentRow -ne ($SeatMapArray.count -1) -and $CurrentSeat -ne 0) {
         do { $i++ } until (($CurrentRow+ $i) -ge ($SeatMapArray.count-1) -or ($CurrentSeat- $i) -le 0 -or $($SeatMapArray[$CurrentRow+$i][$CurrentSeat-$i]) -ne '.')
         if ($($SeatMapArray[$CurrentRow+$i][$CurrentSeat-$i]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
     "BottomRight" {
       if ($CurrentRow -ne ($SeatMapArray.count -1) -and $CurrentSeat -ne ($SeatMapArray[$CurrentRow].count -1)) {
         do { $i++ } until (($CurrentRow+ $i) -ge ($SeatMapArray.count-1) -or ($CurrentSeat+ $i) -ge ($SeatMapArray[$CurrentRow].count-1) -or $($SeatMapArray[$CurrentRow+$i][$CurrentSeat+$i]) -ne '.')
         if ($($SeatMapArray[$CurrentRow+$i][$CurrentSeat+$i]) -eq '#') {$True} else {$false}
+        if ($Verbose -eq $true) {$i}
       } else {$false}
     }
   }
@@ -93,10 +100,12 @@ foreach($SeatString in $SeatMap){
 
 $Row = 0
 $NewSeatMap = New-Object -TypeName "System.Collections.ArrayList"
+#$TimePerIteration = New-Object -TypeName "System.Collections.ArrayList"
 do {
   $Seat = 0
   $NextRow = do {
-    $isOccupied = @("Up","Down","Left","Right","TopLeft","TopRight","BottomLeft","BottomRight") | foreach-object { <#write-host $(convertto-json @{Row = $Row; Seat = $seat; Direction = $_});#> test-occupiedSeatDirection -Direction $_ -CurrentRow $Row -CurrentSeat $Seat -SeatMapArray $MultiDimensionalSeats}
+    #$TimePerIteration.add($(measure-command {$isOccupied = @("Up","Down","Left","Right","TopLeft","TopRight","BottomLeft","BottomRight") | foreach-object { <#write-host $(convertto-json @{Row = $Row; Seat = $seat; Direction = $_});#> test-occupiedSeatDirection -Direction $_ -CurrentRow $Row -CurrentSeat $Seat -SeatMapArray $MultiDimensionalSeats}}).TotalSeconds) | out-null
+    $isOccupied = @("Up","Down","Left","Right","TopLeft","TopRight","BottomLeft","BottomRight") | foreach-object { test-occupiedSeatDirection -Direction $_ -CurrentRow $Row -CurrentSeat $Seat -SeatMapArray $MultiDimensionalSeats}
     if ($MultiDimensionalSeats[$Row][$Seat] -eq '.') {'.'} else {
       if ($MultiDimensionalSeats[$Row][$Seat] -eq 'L' -and ($isOccupied | Group-Object | where-object {$_.Name -eq 'true'}).count -eq 0) {'#'}
       elseif ($MultiDimensionalSeats[$Row][$Seat] -eq '#' -and ($isOccupied | Group-Object | where-object {$_.Name -eq 'true'}).count -gt 4) {'L'}
