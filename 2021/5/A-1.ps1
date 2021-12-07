@@ -29,7 +29,7 @@ $LargestX++;$Largesty++
 $LargestX
 $Map =  New-Object 'object[,]' $largestx,$Largesty
 
-$StraightLines = $StraightLines | Select-Object -ExcludeProperty Plots -Property *,@{N='Plots';E={ $CoOrd = $_; if ($_.From[1] -eq $_.To[1]) { $_.From[0]..$_.To[0] | foreach {@{x=$_;y=$CoOrd.from[1]} }} else {$_.From[1]..$_.To[1] | foreach {@{x=$CoOrd.from[0];y=$_} }}    }  }
+$StraightLines = $StraightLines | Select-Object -ExcludeProperty Plots -Property *,@{N='Plots';E={ $CoOrd = $_; if ($_.From[1] -eq $_.To[1]) { $_.From[0]..$_.To[0] | foreach-object {@{x=$_;y=$CoOrd.from[1]} }} else {$_.From[1]..$_.To[1] | foreach-object {@{x=$CoOrd.from[0];y=$_} }}    }  }
 $StraightLines | foreach-object {$_.plots | foreach-object {$map[$_.x,$_.y] = [int]$map[$_.x,$_.y] + 1}}
 
 $StraightLines.count
