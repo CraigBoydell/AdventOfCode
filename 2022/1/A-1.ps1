@@ -18,4 +18,4 @@ $i = @'
 #$i = ($i -split "`n")
 
 #$i = get-content I.txt
-$global:counter=0; $($($I.split("`n`r") -join ',').replace(',,',',none,') -split ',none,') | foreach { $_ | Select-Object -Property @{N='i';E={$global:counter++;$global:counter}},@{N='Sum';E={ $($_ -split ',' | Measure-Object -sum).sum}} }  | Sort-Object -Property Sum -Descending | Select-Object -first 1
+$global:counter=0; $($($I.split("`n`r") -join ',').replace(',,',',none,') -split ',none,') | ForEach-Object { $_ | Select-Object -Property @{N='i';E={$global:counter++;$global:counter}},@{N='Sum';E={ $($_ -split ',' | Measure-Object -sum).sum}} }  | Sort-Object -Property Sum -Descending | Select-Object -first 1
